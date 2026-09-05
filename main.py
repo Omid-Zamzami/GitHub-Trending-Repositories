@@ -97,14 +97,37 @@ def fetch_repos(duration, limit):
         return []
 
 
+def display_repos(repos, duration, limit):
+    if not repos:
+        print("\nNo repositories to display.")
+        return
+
+    print("\nGitHub Trending Repositories")
+    print(f"Duration: {duration}")
+    print(f"Showing: {limit} repositories")
+
+    for index, item in enumerate(repos, start=1):
+        profile = item.get('owner') or {}
+        owner = profile.get('login', 'No owner')
+        repository = item.get('name', 'No name')
+        stargazers_count = item.get('stargazers_count', 0)
+        language = item.get('language') or 'Unknown'
+        description = item.get('description') or 'No description'
+        html_url = item.get('html_url', 'N/A')
+
+        print(f"\n{index}. {owner}/{repository}")
+        print(f"   Description: {description}")
+        print(f"   Stars: {stargazers_count}")
+        print(f"   Language: {language}")
+        print(f"   Link: {html_url}")
+
 
 def github_trending_repos():
     args = parse_arguments()
 
     try:
-        repos = fetch_repos(duration=args.duration, limit=args.limit)
-        print("fetched")
-        print(len(repos))
+        data = fetch_repos(duration=args.duration, limit=args.limit)
+        display_repos(data, args.duration, args.limit)
     except Exception as e:
         print(f"Error occured: {e}")
 
