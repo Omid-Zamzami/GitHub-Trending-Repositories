@@ -1,0 +1,5 @@
+# Core Application Dependencies
+requests>=2.31.0
+
+# Development & Testing Dependencies
+pytest>=8.0.0
