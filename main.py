@@ -1,9 +1,15 @@
 import argparse
 import requests
 from datetime import datetime, timedelta
+from typing import Any
 
 
-def positive_int(str_value):
+def positive_int(str_value: str) -> int:
+    """Validate that an input string represents a positive integer (> 0).
+
+    Raises:
+        argparse.ArgumentTypeError: If the value is not an integer or is <= 0.
+    """
     try:
         int_value = int(str_value)
     except ValueError:
@@ -14,7 +20,9 @@ def positive_int(str_value):
 
     return int_value
 
-def parse_arguments(args=None):
+
+def parse_arguments(args: list[str] | None = None) -> argparse.Namespace:
+    """Parse and return command-line arguments for the CLI application."""
     parser = argparse.ArgumentParser(description="CLI tool for fetching trending repos.")
 
     parser.add_argument(
@@ -23,21 +31,22 @@ def parse_arguments(args=None):
         type=str.lower,
         choices=["day", "week", "month", "year"],
         default="week",
-        help="Duration of receiving trending repos.(Default: week)"
+        help="Duration of receiving trending repos. (Default: week)"
     )
-    
+
     parser.add_argument(
         "-l",
         "--limit",
         type=positive_int,
         default=10,
-        help="Number of receiving trending repos.(Default: 10)"
+        help="Number of receiving trending repos. (Default: 10)"
     )
 
     return parser.parse_args(args)
 
 
-def calculate_since_date(duration):
+def calculate_since_date(duration: str) -> str:
+    """Calculate the starting date string (YYYY-MM-DD) based on the specified duration."""
     today = datetime.now()
 
     match duration:
@@ -55,7 +64,12 @@ def calculate_since_date(duration):
     return target_date.strftime("%Y-%m-%d")
 
 
-def fetch_repos(duration, limit):
+def fetch_repos(duration: str, limit: int) -> list[dict[str, Any]]:
+    """Fetch trending GitHub repositories using the GitHub Search API.
+
+    Returns:
+        list[dict[str, Any]]: A list of repository dictionaries, or an empty list on failure.
+    """
     since_date = calculate_since_date(duration)
 
     try:
@@ -81,7 +95,7 @@ def fetch_repos(duration, limit):
         response.raise_for_status()
 
     except requests.exceptions.Timeout:
-        print(f"Error: Request timed out. Please check your network and try again.")
+        print("Error: Request timed out. Please check your network and try again.")
         return []
     except requests.exceptions.ConnectionError:
         print("Error: Could not connect to GitHub. Please check your internet connection.")
@@ -97,7 +111,8 @@ def fetch_repos(duration, limit):
         return []
 
 
-def display_repos(repos, duration, limit):
+def display_repos(repos: list[dict[str, Any]], duration: str, limit: int) -> None:
+    """Format and display repository details to stdout with fallbacks for missing values."""
     if not repos:
         print("\nNo repositories to display.")
         return
@@ -108,12 +123,12 @@ def display_repos(repos, duration, limit):
 
     for index, item in enumerate(repos, start=1):
         profile = item.get('owner') or {}
-        owner = profile.get('login', 'No owner')
-        repository = item.get('name', 'No name')
-        stargazers_count = item.get('stargazers_count', 0)
+        owner = profile.get('login') or 'No owner'
+        repository = item.get('name') or 'No name'
+        stargazers_count = item.get('stargazers_count') if item.get('stargazers_count') is not None else 0
         language = item.get('language') or 'Unknown'
         description = item.get('description') or 'No description'
-        html_url = item.get('html_url', 'N/A')
+        html_url = item.get('html_url') or 'N/A'
 
         print(f"\n{index}. {owner}/{repository}")
         print(f"   Description: {description}")
@@ -122,7 +137,8 @@ def display_repos(repos, duration, limit):
         print(f"   Link: {html_url}")
 
 
-def github_trending_repos():
+def github_trending_repos() -> None:
+    """Main application entry point to orchestrate CLI argument parsing, API fetching, and display."""
     args = parse_arguments()
 
     try:
